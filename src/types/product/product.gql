@@ -20,5 +20,30 @@ type Product {
   liquidCooled: Boolean
   bikeType: BikeType
   range: String
-  createdBy: ID!
+  createdBy: User!
+}
+
+input NewProductInput {
+  name: String!
+  price: Float!
+  image: String!
+  type: ProductType!
+  description: String
+  liquidCooled: Boolean
+  bikeType: BikeType
+  range: String
+}
+
+input UpdateProductInput {
+  name: String
+  price: String
+  image: String
+  description: String
+  liquidCooled: Boolean
+  bikeType: BikeType
+  range: String
+}
+
+extend type Query {
+  product: Product
 }
