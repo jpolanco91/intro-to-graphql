@@ -11,33 +11,23 @@ const productsTypeMatcher = {
 
 export default {
   Query: {
-    products(_, args) {
-      const prods = Product.find()
-      return { products: prods }
+    products: async (_, args) => {
+      const prods = await Product.find()
+      return prods
     },
     product: async (_, args) => {
-      const prod = await Product.findOne({ _id: args.id }).then(data => data)
-
-      return {
-        name: prod.name,
-        price: prod.price,
-        image: prod.image,
-        type: productsTypeMatcher[prod.type],
-        createdBy: prod.createdBy,
-        description: prod.description,
-        liquidCooled: prod.liquidCooled,
-        range: prod.range,
-        bikeType: {}
-      }
+      const prod = await Product.findById(args.id).then(data => data)
+      return prod
     }
   },
   Mutation: {
-    newProduct(_, args) {
+    newProduct(_, args, ctx) {
       let prod = new Product({
         name: args.input.name,
         price: args.input.price,
         image: args.input.image,
         type: args.input.type,
+        createdBy: ctx.user,
         description: args.input.description,
         bikeType: args.input.bikeType,
         range: args.input.range
@@ -45,33 +35,35 @@ export default {
 
       const newProd = prod.save()
 
-      return { product: newProd }
+      return newProd
     },
 
-    updateProduct(_, args) {
-      const prod = Product.findById(args.id)
+    updateProduct: async (_, args) => {
+      let prod = {
+        name: args.input.name,
+        price: args.input.price,
+        image: args.input.image,
+        type: args.input.type,
+        description: args.input.description,
+        bikeType: args.input.bikeType,
+        range: args.input.range
+      }
 
-      prod.name = args.input.name !== null ? args.input.name : prod.name
-      prod.price = args.input.price !== null ? args.input.price : prod.price
-      prod.image = args.input.image !== null ? args.input.image : prod.image
-      prod.type = args.input.type !== null ? args.input.type : prod.type
-      prod.description = args.input.description !== null ? args.input.description : prod.description
-      prod.bikeType = args.input.bikeType !== null ? args.input.bikeType : prod.bikeType
-      prod.range = args.input.range !== null ? args.input.range : prod.range
+      const result = await Product.findByIdAndUpdate(args.id, prod, { new: true }).then(data => data)
 
-      prod.save()
-
-      return { product: prod }
-
-      // https://vegibit.com/mongoose-crud-tutorial/
+      return result
     },
 
-    removeProduct(_, args) {
-      const removedProd = Product.deleteOne({ _id: args.id })
-      return { product: removedProd }
+    removeProduct: async (_, args) => {
+      const removedProd = await Product.findByIdAndRemove(args.id).then(data => data)
+      return removedProd
     }
   },
   Product: {
-    __resolveType(product) {}
+    __resolveType(product) {},
+    createdBy: async _user => {
+      const user = await User.findOne({ _id: _user.createdBy })
+      return user
+    }
   }
 }
